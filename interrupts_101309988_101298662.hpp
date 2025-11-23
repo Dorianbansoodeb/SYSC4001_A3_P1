@@ -5,8 +5,8 @@
  * 
  */
 
-#ifndef INTERRUPTS_HPP_
-#define INTERRUPTS_HPP_
+#ifndef INTERRUPTS_101309988_101298662_HPP_
+#define INTERRUPTS_101309988_101298662_HPP_
 
 #include<iostream>
 #include<fstream>
@@ -18,6 +18,9 @@
 #include<sstream>
 #include<iomanip>
 #include<algorithm>
+
+#define ADDR_BASE   0
+#define VECTOR_SIZE 2
 
 //An enumeration of states to make assignment easier
 enum states {
@@ -42,29 +45,44 @@ std::ostream& operator<<(std::ostream& os, const enum states& s) { //Overloading
 }
 
 struct memory_partition{
-    unsigned int    partition_number;
-    unsigned int    size;
-    int             occupied;
+    unsigned int partition_number;
+    unsigned int size;
+    std::string code; // "free", "init", or program name
 } memory_paritions[] = {
-    {1, 40, -1},
-    {2, 25, -1},
-    {3, 15, -1},
-    {4, 10, -1},
-    {5, 8, -1},
-    {6, 2, -1}
+    {1, 40, "free"},
+    {2, 25, "free"},
+    {3, 15, "free"},
+    {4, 10, "free"},
+    {5, 8,  "free"},
+    {6, 2,  "init"}
 };
 
 struct PCB{
     int             PID;
-    unsigned int    size;
+    std::string     program_name;   //name
+    unsigned int    size;           // MB
     unsigned int    arrival_time;
+
     int             start_time;
+    int             finish_time;    
+
     unsigned int    processing_time;
     unsigned int    remaining_time;
-    int             partition_number;
-    enum states     state;
+
     unsigned int    io_freq;
     unsigned int    io_duration;
+    int             time_to_next_io;  //countdown while running
+    int             io_complete_time; //used while waiting
+
+    int             priority;       //for External Priority
+
+    int             partition_number;
+    enum states     state;
+};
+
+struct external_file{
+    std::string     program_name;
+    unsigned int    size;
 };
 
 //------------------------------------HELPER FUNCTIONS FOR THE SIMULATOR------------------------------
@@ -228,27 +246,23 @@ void write_output(std::string execution, const char* filename) {
 
 //Assign memory partition to program
 bool assign_memory(PCB &program) {
-    int size_to_fit = program.size;
-    int available_size = 0;
-
     for(int i = 5; i >= 0; i--) {
-        available_size = memory_paritions[i].size;
+        if(program.size <= memory_paritions[i].size
+           && memory_paritions[i].code == "free") {
 
-        if(size_to_fit <= available_size && memory_paritions[i].occupied == -1) {
-            memory_paritions[i].occupied = program.PID;
+            memory_paritions[i].code = program.program_name; // or PID string if no name
             program.partition_number = memory_paritions[i].partition_number;
             return true;
         }
     }
-
     return false;
 }
 
 //Free a memory partition
 bool free_memory(PCB &program){
     for(int i = 5; i >= 0; i--) {
-        if(program.PID == memory_paritions[i].occupied) {
-            memory_paritions[i].occupied = -1;
+        if(program.partition_number == (int)memory_paritions[i].partition_number) {
+            memory_paritions[i].code = "free";
             program.partition_number = -1;
             return true;
         }
@@ -263,13 +277,22 @@ PCB add_process(std::vector<std::string> tokens) {
     process.size = std::stoi(tokens[1]);
     process.arrival_time = std::stoi(tokens[2]);
     process.processing_time = std::stoi(tokens[3]);
-    process.remaining_time = std::stoi(tokens[3]);
+    process.remaining_time = process.processing_time;
+
     process.io_freq = std::stoi(tokens[4]);
     process.io_duration = std::stoi(tokens[5]);
-    process.start_time = -1;
-    process.partition_number = -1;
-    process.state = NOT_ASSIGNED;
 
+    // if priority column exists:
+    process.priority = (tokens.size() > 6) ? std::stoi(tokens[6]) : 0;
+
+    process.time_to_next_io = process.io_freq;
+    process.io_complete_time = -1;
+
+    process.start_time = -1;
+    process.finish_time = -1;
+    process.partition_number = -1;
+    process.program_name = "P" + std::to_string(process.PID); // or from file if you add a name column
+    process.state = NEW;
     return process;
 }
 
@@ -313,6 +336,95 @@ void idle_CPU(PCB &running) {
     running.size = 0;
     running.state = NOT_ASSIGNED;
     running.PID = -1;
+}
+
+std::pair<std::string, int> intr_boilerplate(int current_time, int intr_num, int context_save_time, std::vector<std::string> vectors) {
+
+    std::string execution = "";
+
+    execution += std::to_string(current_time) + ", " + std::to_string(1) + ", switch to kernel mode\n";
+    current_time++;
+
+    execution += std::to_string(current_time) + ", " + std::to_string(context_save_time) + ", context saved\n";
+    current_time += context_save_time;
+    
+    char vector_address_c[10];
+    sprintf(vector_address_c, "0x%04X", (ADDR_BASE + (intr_num * VECTOR_SIZE)));
+    std::string vector_address(vector_address_c);
+
+    execution += std::to_string(current_time) + ", " + std::to_string(1) + ", find vector " + std::to_string(intr_num) 
+                    + " in memory position " + vector_address + "\n";
+    current_time++;
+
+    execution += std::to_string(current_time) + ", " + std::to_string(1) + ", load address " + vectors.at(intr_num) + " into the PC\n";
+    current_time++;
+
+    return std::make_pair(execution, current_time);
+}
+
+std::tuple<std::vector<std::string>, std::vector<int>, std::vector<external_file>>parse_args(int argc, char** argv) {
+    if(argc != 5) {
+        std::cout << "ERROR!\nExpected 4 argument, received " << argc - 1 << std::endl;
+        std::cout << "To run the program, do: ./interrutps <your_trace_file.txt> <your_vector_table.txt> <your_device_table.txt> <your_external_files.txt>" << std::endl;
+        exit(1);
+    }
+
+    std::ifstream input_file;
+    input_file.open(argv[1]);
+    if (!input_file.is_open()) {
+        std::cerr << "Error: Unable to open file: " << argv[1] << std::endl;
+        exit(1);
+    }
+    input_file.close();
+
+    input_file.open(argv[2]);
+    if (!input_file.is_open()) {
+        std::cerr << "Error: Unable to open file: " << argv[2] << std::endl;
+        exit(1);
+    }
+
+    std::string vector;
+    std::vector<std::string> vectors;
+    while(std::getline(input_file, vector)) {
+        vectors.push_back(vector);
+    }
+    input_file.close();
+
+    std::string duration;
+    std::vector<int> delays;
+    input_file.open(argv[3]);
+
+    if (!input_file.is_open()) {
+        std::cerr << "Error: Unable to open file: " << argv[3] << std::endl;
+        exit(1);
+    }
+
+    while(std::getline(input_file, duration)) {
+        delays.push_back(std::stoi(duration));
+    }
+    input_file.close();
+
+    std::vector<external_file> external_files;
+    input_file.open(argv[4]);
+    if (!input_file.is_open()) {
+        std::cerr << "Error: Unable to open file: " << argv[4] << std::endl;
+        exit(1);
+    }
+
+    std::string file_content;
+    while(std::getline(input_file, file_content)) {
+        external_file entry;
+        auto file_info      = split_delim(file_content, ",");
+
+        entry.program_name  = file_info[0];
+        entry.size          = std::stoi(file_info[1]);
+        external_files.push_back(entry);
+    }
+
+    input_file.close();
+
+
+    return {vectors, delays, external_files};
 }
 
 #endif
