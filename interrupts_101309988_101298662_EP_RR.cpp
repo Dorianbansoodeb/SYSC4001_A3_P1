@@ -7,14 +7,14 @@
 
 #include "interrupts_101309988_101298662.hpp"
 
-void FCFS(std::vector<PCB> &ready_queue) {
-    std::sort( 
-                ready_queue.begin(),
-                ready_queue.end(),
-                []( const PCB &first, const PCB &second ){
-                    return (first.arrival_time > second.arrival_time); 
-                } 
-            );
+void EP(std::vector<PCB> &ready_queue) {
+    std::sort(
+        ready_queue.begin(),
+        ready_queue.end(),
+        [](const PCB &first, const PCB &second){
+            return (first.priority < second.priority); 
+        }
+    );
 }
 
 std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
@@ -94,9 +94,10 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
         /////////////////////////////////////////////////////////////////
 
         //////////////////////////SCHEDULER//////////////////////////////
-        FCFS(ready_queue); //example of FCFS is shown here
+        EP(ready_queue);
         /////////////////////////////////////////////////////////////////
-
+        
+        //Schedule a process if the CPU is idle
         if(running.PID == -1 && !ready_queue.empty()) {
 
             running = ready_queue.back();
@@ -124,35 +125,11 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
             if(running.io_freq > 0) {
                 running.time_to_next_io--;
             }
-            time_in_slice++; //increment time in slice for RR
+
+            time_in_slice++;
             sync_queue(job_list, running);
 
-            if(running.io_freq > 0 && running.time_to_next_io == 0 && running.remaining_time > 0) {
-                states old_state = running.state;
-                running.state = WAITING;
-
-                running.io_complete_time = current_time + running.io_duration;
-                running.time_to_next_io = running.io_freq;
-
-                execution_status += print_exec_status(current_time, running.PID, old_state, WAITING);
-
-                wait_queue.push_back(running);
-                sync_queue(job_list, running);
-                idle_CPU(running);
-            }
-            //check for quantum expiration
-            if(running.remaining_time > 0 && time_in_slice == QUANTUM) {
-                states old_state = running.state;
-                running.state = READY;
-
-                execution_status += print_exec_status(current_time, running.PID, old_state, READY);
-
-                ready_queue.push_back(running);
-                sync_queue(job_list, running);
-                idle_CPU(running);
-                time_in_slice = 0;
-            }
-            
+            // termination has highest priority
             if(running.remaining_time == 0) {
                 states old_state = running.state;
                 running.state = TERMINATED;
@@ -163,6 +140,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
 
                 sync_queue(job_list, running);
                 idle_CPU(running);
+
                 for(auto &p : list_processes) {
                     if(p.state == NEW && p.arrival_time <= current_time) {
                         bool mem_ok = assign_memory(p);
@@ -174,8 +152,39 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                         }
                     }
                 }
+
             }
-        }
+            // only check I/O if it doesn't terminate
+            else if(running.io_freq > 0 && running.time_to_next_io == 0) {
+
+                states old_state = running.state;
+                running.state = WAITING;
+
+                running.io_complete_time = current_time + running.io_duration;
+                running.time_to_next_io = running.io_freq;
+
+                execution_status += print_exec_status(current_time, running.PID, old_state, WAITING);
+
+                wait_queue.push_back(running);
+                sync_queue(job_list, running);
+                idle_CPU(running);
+
+            }
+            // only check quantum if it doesn't terminate or go to I/O
+            else if(time_in_slice == QUANTUM) {
+
+                states old_state = running.state;
+                running.state = READY;
+
+                execution_status += print_exec_status(current_time, running.PID, old_state, READY);
+
+                ready_queue.push_back(running);
+                sync_queue(job_list, running);
+                idle_CPU(running);
+
+                time_in_slice = 0;
+            }
+        }   
 
         current_time++;
     }

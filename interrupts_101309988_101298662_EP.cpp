@@ -93,6 +93,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
         EP(ready_queue);
         /////////////////////////////////////////////////////////////////
 
+        //Schedule a process if the CPU is idle
         if(running.PID == -1 && !ready_queue.empty()) {
 
             running = ready_queue.front();
@@ -120,7 +121,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
             }
 
             sync_queue(job_list, running);
-
+            //check for I/O
             if(running.io_freq > 0 && running.time_to_next_io == 0 && running.remaining_time > 0) {
                 states old_state = running.state;
                 running.state = WAITING;
