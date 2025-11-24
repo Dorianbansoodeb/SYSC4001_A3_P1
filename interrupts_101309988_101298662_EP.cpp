@@ -5,15 +5,15 @@
  * 
  */
 
-#include<interrupts_101309988_101298662.hpp>
+#include "interrupts_101309988_101298662.hpp"
 
-void FCFS(std::vector<PCB> &ready_queue) {
-    std::sort( 
+void EP(std::vector<PCB> &ready_queue) {
+    std::sort(
                 ready_queue.begin(),
                 ready_queue.end(),
                 []( const PCB &first, const PCB &second ){
-                    return (first.arrival_time > second.arrival_time); 
-                } 
+                    return (first.priority < second.priority);
+                }
             );
 }
 
@@ -62,7 +62,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                 if(mem_ok) {
                     process.state = READY;  //Set the process state to READY
                     ready_queue.push_back(process); //Add the process to the ready queue
-
+                    sync_queue(job_list, process);
                     execution_status += print_exec_status(current_time, process.PID, NEW, READY);
                 }
             }
@@ -90,13 +90,13 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
         /////////////////////////////////////////////////////////////////
 
         //////////////////////////SCHEDULER//////////////////////////////
-        FCFS(ready_queue); //example of FCFS is shown here
+        EP(ready_queue);
         /////////////////////////////////////////////////////////////////
 
         if(running.PID == -1 && !ready_queue.empty()) {
 
-            running = ready_queue.back();
-            ready_queue.pop_back();
+            running = ready_queue.front();
+            ready_queue.erase(ready_queue.begin());
 
             states old_state = running.state;
             running.state = RUNNING;
@@ -141,8 +141,9 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                 running.finish_time = current_time;
 
                 free_memory(running);
-                execution_status += print_exec_status(current_time, running.PID, old_state, TERMINATED);
-
+                if (running.PID != -1) {
+                    execution_status += print_exec_status(current_time, running.PID, old_state, TERMINATED);
+                }
                 sync_queue(job_list, running);
                 idle_CPU(running);
                 for(auto &p : list_processes) {
