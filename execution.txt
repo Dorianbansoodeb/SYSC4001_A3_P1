@@ -1,0 +1,83 @@
++------------------------------------------------+
+|Time of Transition |PID | Old State | New State |
++------------------------------------------------+
+|                 0 |  1 |       NEW |     READY |
+|                 0 |  1 |     READY |   RUNNING |
+|                 2 |  2 |       NEW |     READY |
+|                 4 |  3 |       NEW |     READY |
+|                 4 |  1 |   RUNNING |   WAITING |
+|                 4 | -1 |NOT_ASSIGNED |TERMINATED |
+|                 5 |  2 |     READY |   RUNNING |
+|                 6 |  4 |       NEW |     READY |
+|                 7 |  1 |   WAITING |     READY |
+|                 8 |  5 |       NEW |     READY |
+|                10 |  2 |   RUNNING |   WAITING |
+|                10 | -1 |NOT_ASSIGNED |TERMINATED |
+|                11 |  1 |     READY |   RUNNING |
+|                14 |  2 |   WAITING |     READY |
+|                15 |  1 |   RUNNING |   WAITING |
+|                15 | -1 |NOT_ASSIGNED |TERMINATED |
+|                16 |  2 |     READY |   RUNNING |
+|                18 |  1 |   WAITING |     READY |
+|                21 |  2 |   RUNNING |   WAITING |
+|                21 | -1 |NOT_ASSIGNED |TERMINATED |
+|                22 |  1 |     READY |   RUNNING |
+|                25 |  2 |   WAITING |     READY |
+|                26 |  1 |   RUNNING |   WAITING |
+|                26 | -1 |NOT_ASSIGNED |TERMINATED |
+|                27 |  2 |     READY |   RUNNING |
+|                29 |  1 |   WAITING |     READY |
+|                32 |  2 |   RUNNING |   WAITING |
+|                32 | -1 |NOT_ASSIGNED |TERMINATED |
+|                33 |  1 |     READY |   RUNNING |
+|                36 |  2 |   WAITING |     READY |
+|                37 |  1 |   RUNNING |TERMINATED |
+|                38 |  2 |     READY |   RUNNING |
+|                43 |  2 |   RUNNING |   WAITING |
+|                43 | -1 |NOT_ASSIGNED |TERMINATED |
+|                44 |  3 |     READY |   RUNNING |
+|                47 |  2 |   WAITING |     READY |
+|                50 |  3 |   RUNNING |   WAITING |
+|                50 | -1 |NOT_ASSIGNED |TERMINATED |
+|                51 |  2 |     READY |   RUNNING |
+|                52 |  3 |   WAITING |     READY |
+|                56 |  2 |   RUNNING |TERMINATED |
+|                57 |  3 |     READY |   RUNNING |
+|                63 |  3 |   RUNNING |   WAITING |
+|                63 | -1 |NOT_ASSIGNED |TERMINATED |
+|                64 |  4 |     READY |   RUNNING |
+|                65 |  3 |   WAITING |     READY |
+|                68 |  4 |   RUNNING |   WAITING |
+|                68 | -1 |NOT_ASSIGNED |TERMINATED |
+|                69 |  3 |     READY |   RUNNING |
+|                71 |  4 |   WAITING |     READY |
+|                75 |  3 |   RUNNING |   WAITING |
+|                75 | -1 |NOT_ASSIGNED |TERMINATED |
+|                76 |  4 |     READY |   RUNNING |
+|                77 |  3 |   WAITING |     READY |
+|                80 |  4 |   RUNNING |   WAITING |
+|                80 | -1 |NOT_ASSIGNED |TERMINATED |
+|                81 |  3 |     READY |   RUNNING |
+|                83 |  4 |   WAITING |     READY |
+|                84 |  3 |   RUNNING |TERMINATED |
+|                85 |  4 |     READY |   RUNNING |
+|                89 |  4 |   RUNNING |TERMINATED |
+|                90 |  5 |     READY |   RUNNING |
+|                93 |  5 |   RUNNING |   WAITING |
+|                93 | -1 |NOT_ASSIGNED |TERMINATED |
+|                97 |  5 |   WAITING |     READY |
+|                97 |  5 |     READY |   RUNNING |
+|               100 |  5 |   RUNNING |   WAITING |
+|               100 | -1 |NOT_ASSIGNED |TERMINATED |
+|               104 |  5 |   WAITING |     READY |
+|               104 |  5 |     READY |   RUNNING |
+|               107 |  5 |   RUNNING |   WAITING |
+|               107 | -1 |NOT_ASSIGNED |TERMINATED |
+|               111 |  5 |   WAITING |     READY |
+|               111 |  5 |     READY |   RUNNING |
+|               114 |  5 |   RUNNING |   WAITING |
+|               114 | -1 |NOT_ASSIGNED |TERMINATED |
+|               118 |  5 |   WAITING |     READY |
+|               118 |  5 |     READY |   RUNNING |
+|               119 |  5 |   RUNNING |TERMINATED |
++------------------------------------------------+

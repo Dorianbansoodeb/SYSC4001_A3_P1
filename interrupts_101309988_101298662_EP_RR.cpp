@@ -33,6 +33,10 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
     unsigned int current_time = 0;
     PCB running;
 
+    //quantum
+    unsigned int time_in_slice = 0;  //how long the running process used the CPU 
+    const unsigned int QUANTUM = 100;
+
     //Initialize an empty running process
     idle_CPU(running);
 
@@ -107,6 +111,8 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
 
             execution_status += print_exec_status(current_time, running.PID, old_state, RUNNING);
             sync_queue(job_list, running);
+
+            time_in_slice = 0; //reset time in slice for RR
         }
 
         if(running.PID != -1) {
@@ -118,7 +124,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
             if(running.io_freq > 0) {
                 running.time_to_next_io--;
             }
-
+            time_in_slice++; //increment time in slice for RR
             sync_queue(job_list, running);
 
             if(running.io_freq > 0 && running.time_to_next_io == 0 && running.remaining_time > 0) {
@@ -134,7 +140,19 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                 sync_queue(job_list, running);
                 idle_CPU(running);
             }
+            //check for quantum expiration
+            if(running.remaining_time > 0 && time_in_slice == QUANTUM) {
+                states old_state = running.state;
+                running.state = READY;
 
+                execution_status += print_exec_status(current_time, running.PID, old_state, READY);
+
+                ready_queue.push_back(running);
+                sync_queue(job_list, running);
+                idle_CPU(running);
+                time_in_slice = 0;
+            }
+            
             if(running.remaining_time == 0) {
                 states old_state = running.state;
                 running.state = TERMINATED;
