@@ -17,11 +17,40 @@ void EP(std::vector<PCB> &ready_queue) {
             );
 }
 
+void record_memory_status(unsigned int time) {
+    std::ofstream memlog("memory_status.txt", std::ios::app);
+    if (!memlog.is_open()) {
+        return;
+    }
+
+    memlog << "================ MEMORY STATUS ================\n";
+    memlog << "Time: " << time << "\n\n";
+
+    memlog << "Partition | Size | Status\n";
+    memlog << "------------------------------------------\n";
+
+    int total_used = 0;
+    int total_free = 0;
+
+    for (int i = 0; i < 6; i++) {
+        memlog << memory_partitions[i].partition_number << "         | "
+               << memory_partitions[i].size << "MB | "
+               << memory_partitions[i].code << "\n";
+
+        if (memory_partitions[i].code == "free") {
+            total_free += memory_partitions[i].size;
+        } else {
+            total_used += memory_partitions[i].size;
+        }
+    }
+
+    memlog << "\nTotal Used: " << total_used << " MB\n";
+    memlog << "Total Free: " << total_free << " MB\n";
+    memlog << "==============================================\n\n";
+}
+
 std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
-    std::vector<PCB> list_processes,
-               std::vector<std::string> vectors,
-               std::vector<int> delays,
-               std::vector<external_file> external_files) {
+    std::vector<PCB> list_processes) {
 
     std::vector<PCB> ready_queue;   //The ready queue of processes
     std::vector<PCB> wait_queue;    //The wait queue of processes
@@ -63,7 +92,10 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                     process.state = READY;  //Set the process state to READY
                     ready_queue.push_back(process); //Add the process to the ready queue
                     sync_queue(job_list, process);
+
                     execution_status += print_exec_status(current_time, process.PID, NEW, READY);
+                    //BONUS: log memory whenever a process is successfully loaded
+                    record_memory_status(current_time);
                 }
             }
         }
@@ -121,6 +153,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
             }
 
             sync_queue(job_list, running);
+
             //check for I/O
             if(running.io_freq > 0 && running.time_to_next_io == 0 && running.remaining_time > 0) {
                 states old_state = running.state;
@@ -136,21 +169,27 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                 idle_CPU(running);
             }
 
-            if(running.remaining_time == 0) {
+            // Only terminate real processes (PID != -1)
+            if (running.PID != -1 && running.remaining_time == 0) {
                 states old_state = running.state;
                 running.state = TERMINATED;
                 running.finish_time = current_time;
 
                 free_memory(running);
-                if (running.PID != -1) {
-                    execution_status += print_exec_status(current_time, running.PID, old_state, TERMINATED);
-                }
+                record_memory_status(current_time); // BONUS
+
+                execution_status += print_exec_status(current_time,
+                                                    running.PID,
+                                                    old_state,
+                                                    TERMINATED);
+
                 sync_queue(job_list, running);
                 idle_CPU(running);
-                for(auto &p : list_processes) {
-                    if(p.state == NEW && p.arrival_time <= current_time) {
+
+                for (auto &p : list_processes) {
+                    if (p.state == NEW && p.arrival_time <= current_time) {
                         bool mem_ok = assign_memory(p);
-                        if(mem_ok) {
+                        if (mem_ok) {
                             p.state = READY;
                             ready_queue.push_back(p);
                             sync_queue(job_list, p);
@@ -174,9 +213,9 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
 int main(int argc, char** argv) {
 
     //Get the input file from the user
-    if(argc != 5) {
-        std::cout << "ERROR!\nExpected 4 arguments, received " << argc - 1 << std::endl;
-        std::cout << "To run the program, do: ./interrupts <your_input_file.txt> <your_vector_table.txt> <your_device_table.txt> <your_external_files.txt>" << std::endl;
+    if(argc != 2) {
+        std::cout << "ERROR!\nExpected 1 argument, received " << argc - 1 << std::endl;
+        std::cout << "To run the program, do: ./interrutps <your_input_file.txt>" << std::endl;
         return -1;
     }
 
@@ -191,9 +230,6 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    //Load vectors/delays/external_files using your A2-style parser
-    auto [vectors, delays, external_files] = parse_args(argc, argv);
-
     //Parse the entire input file and populate a vector of PCBs.
     //To do so, the add_process() helper function is used (see include file).
     std::string line;
@@ -206,12 +242,8 @@ int main(int argc, char** argv) {
     }
     input_file.close();
 
-    //Sort by arrival time (needed for correct simulation order)
-    std::sort(list_process.begin(), list_process.end(),
-              [](PCB& a, PCB& b){ return a.arrival_time < b.arrival_time; });
-
     //With the list of processes, run the simulation
-    auto [exec] = run_simulation(list_process, vectors, delays, external_files);
+    auto [exec] = run_simulation(list_process);
 
     write_output(exec, "execution.txt");
 

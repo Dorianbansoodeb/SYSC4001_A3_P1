@@ -48,7 +48,7 @@ struct memory_partition{
     unsigned int partition_number;
     unsigned int size;
     std::string code; // "free", "init", or program name
-} memory_paritions[] = {
+} memory_partitions[] = {
     {1, 40, "free"},
     {2, 25, "free"},
     {3, 15, "free"},
@@ -247,11 +247,11 @@ void write_output(std::string execution, const char* filename) {
 //Assign memory partition to program
 bool assign_memory(PCB &program) {
     for(int i = 5; i >= 0; i--) {
-        if(program.size <= memory_paritions[i].size
-           && memory_paritions[i].code == "free") {
+        if(program.size <= memory_partitions[i].size
+           && memory_partitions[i].code == "free") {
 
-            memory_paritions[i].code = program.program_name; // or PID string if no name
-            program.partition_number = memory_paritions[i].partition_number;
+            memory_partitions[i].code = program.program_name; // or PID string if no name
+            program.partition_number = memory_partitions[i].partition_number;
             return true;
         }
     }
@@ -261,8 +261,8 @@ bool assign_memory(PCB &program) {
 //Free a memory partition
 bool free_memory(PCB &program){
     for(int i = 5; i >= 0; i--) {
-        if(program.partition_number == (int)memory_paritions[i].partition_number) {
-            memory_paritions[i].code = "free";
+        if(program.partition_number == (int)memory_partitions[i].partition_number) {
+            memory_partitions[i].code = "free";
             program.partition_number = -1;
             return true;
         }
@@ -426,5 +426,7 @@ std::tuple<std::vector<std::string>, std::vector<int>, std::vector<external_file
 
     return {vectors, delays, external_files};
 }
+
+void record_memory_status(unsigned int time);
 
 #endif
