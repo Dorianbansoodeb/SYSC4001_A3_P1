@@ -33,6 +33,9 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
     unsigned int current_time = 0;
     PCB running;
 
+    unsigned int time_in_slice = 0;
+    const unsigned int QUANTUM = 5; 
+
     //Initialize an empty running process
     idle_CPU(running);
 
@@ -77,8 +80,10 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                 states old_state = p.state;
                 p.state = READY;
 
-                ready_queue.push_back(p);
-                execution_status += print_exec_status(current_time, p.PID, old_state, READY);
+                if (p.PID != -1) {
+                    ready_queue.push_back(p);
+                    execution_status += print_exec_status(current_time, p.PID, old_state, READY);
+                }
                 sync_queue(job_list, p);
 
                 wait_queue.erase(wait_queue.begin() + i);
@@ -90,13 +95,13 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
         /////////////////////////////////////////////////////////////////
 
         //////////////////////////SCHEDULER//////////////////////////////
-        FCFS(ready_queue); //example of FCFS is shown here
+        //no sorting needed for rr
         /////////////////////////////////////////////////////////////////
 
         if(running.PID == -1 && !ready_queue.empty()) {
 
-            running = ready_queue.back();
-            ready_queue.pop_back();
+            running = ready_queue.front();
+            ready_queue.erase(ready_queue.begin());
 
             states old_state = running.state;
             running.state = RUNNING;
@@ -107,6 +112,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
 
             execution_status += print_exec_status(current_time, running.PID, old_state, RUNNING);
             sync_queue(job_list, running);
+            time_in_slice = 0; //reset
         }
 
         if(running.PID != -1) {
@@ -119,6 +125,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                 running.time_to_next_io--;
             }
 
+            time_in_slice++;
             sync_queue(job_list, running);
 
             if(running.io_freq > 0 && running.time_to_next_io == 0 && running.remaining_time > 0) {
@@ -135,7 +142,7 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                 idle_CPU(running);
             }
 
-            if(running.remaining_time == 0) {
+            else if (running.remaining_time == 0) {                
                 states old_state = running.state;
                 running.state = TERMINATED;
                 running.finish_time = current_time;
@@ -156,6 +163,23 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                         }
                     }
                 }
+            }
+            else if(time_in_slice == QUANTUM) {
+                states old_state = running.state;
+                running.state = READY;
+
+                execution_status += print_exec_status(current_time, running.PID, old_state, READY);
+                //guard
+                if (running.PID != -1) {                  
+                    ready_queue.push_back (running);
+                    sync_queue(job_list, running);
+                }
+                
+                
+               
+
+                idle_CPU(running);
+                time_in_slice = 0; // reset slice
             }
         }
 
