@@ -1,2 +1,0 @@
-program1, 10
-program2, 15
