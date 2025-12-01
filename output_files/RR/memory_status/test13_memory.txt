@@ -1,0 +1,96 @@
+================ MEMORY STATUS ================
+Time: 0
+
+Partition | Size | Status
+------------------------------------------
+1         | 40MB | free
+2         | 25MB | free
+3         | 15MB | free
+4         | 10MB | free
+5         | 8MB | P10
+6         | 2MB | init
+
+Total Used: 10 MB
+Total Free: 90 MB
+==============================================
+
+================ MEMORY STATUS ================
+Time: 6
+
+Partition | Size | Status
+------------------------------------------
+1         | 40MB | free
+2         | 25MB | free
+3         | 15MB | free
+4         | 10MB | P20
+5         | 8MB | P10
+6         | 2MB | init
+
+Total Used: 20 MB
+Total Free: 80 MB
+==============================================
+
+================ MEMORY STATUS ================
+Time: 9
+
+Partition | Size | Status
+------------------------------------------
+1         | 40MB | free
+2         | 25MB | free
+3         | 15MB | P30
+4         | 10MB | P20
+5         | 8MB | P10
+6         | 2MB | init
+
+Total Used: 35 MB
+Total Free: 65 MB
+==============================================
+
+================ MEMORY STATUS ================
+Time: 13
+
+Partition | Size | Status
+------------------------------------------
+1         | 40MB | free
+2         | 25MB | free
+3         | 15MB | P30
+4         | 10MB | free
+5         | 8MB | P10
+6         | 2MB | init
+
+Total Used: 25 MB
+Total Free: 75 MB
+==============================================
+
+================ MEMORY STATUS ================
+Time: 32
+
+Partition | Size | Status
+------------------------------------------
+1         | 40MB | free
+2         | 25MB | free
+3         | 15MB | P30
+4         | 10MB | free
+5         | 8MB | free
+6         | 2MB | init
+
+Total Used: 17 MB
+Total Free: 83 MB
+==============================================
+
+================ MEMORY STATUS ================
+Time: 33
+
+Partition | Size | Status
+------------------------------------------
+1         | 40MB | free
+2         | 25MB | free
+3         | 15MB | free
+4         | 10MB | free
+5         | 8MB | free
+6         | 2MB | init
+
+Total Used: 2 MB
+Total Free: 98 MB
+==============================================
+

@@ -1,6 +1,7 @@
 /**
- * @file interrupts.cpp
- * @author Sasisekhar Govind
+ * @file interrupts_101309988_101298662_EP.cpp
+ * @author Dorian Bansoodeb 101309988
+ * @author Justin Kim 101298662
  * @brief template main.cpp file for Assignment 3 Part 1 of SYSC4001
  * 
  */
@@ -156,13 +157,14 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
 
             //check for I/O
             if(running.io_freq > 0 && running.time_to_next_io == 0 && running.remaining_time > 0) {
+                unsigned int transition = current_time + 1;
                 states old_state = running.state;
                 running.state = WAITING;
 
-                running.io_complete_time = current_time + running.io_duration;
+                running.io_complete_time = transition + running.io_duration;
                 running.time_to_next_io = running.io_freq;
 
-                execution_status += print_exec_status(current_time, running.PID, old_state, WAITING);
+                execution_status += print_exec_status(transition, running.PID, old_state, WAITING);
 
                 wait_queue.push_back(running);
                 sync_queue(job_list, running);
@@ -171,14 +173,15 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
 
             // Only terminate real processes (PID != -1)
             if (running.PID != -1 && running.remaining_time == 0) {
+                unsigned int transition = current_time+1;
                 states old_state = running.state;
                 running.state = TERMINATED;
-                running.finish_time = current_time;
+                running.finish_time = transition;
 
                 free_memory(running);
-                record_memory_status(current_time); // BONUS
+                record_memory_status(transition); // BONUS
 
-                execution_status += print_exec_status(current_time,
+                execution_status += print_exec_status(transition,
                                                     running.PID,
                                                     old_state,
                                                     TERMINATED);
@@ -187,13 +190,13 @@ std::tuple<std::string /* add std::string for bonus mark */ > run_simulation(
                 idle_CPU(running);
 
                 for (auto &p : list_processes) {
-                    if (p.state == NEW && p.arrival_time <= current_time) {
+                    if (p.state == NEW && p.arrival_time <= transition) {
                         bool mem_ok = assign_memory(p);
                         if (mem_ok) {
                             p.state = READY;
                             ready_queue.push_back(p);
                             sync_queue(job_list, p);
-                            execution_status += print_exec_status(current_time, p.PID, NEW, READY);
+                            execution_status += print_exec_status(transition, p.PID, NEW, READY);
                         }
                     }
                 }
